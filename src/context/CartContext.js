@@ -9,18 +9,20 @@ export function useCart() {
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
 
-  // Load cart from localStorage on mount
   useEffect(() => {
-    const storedCart = localStorage.getItem('cart');
-    if (storedCart) setCart(JSON.parse(storedCart));
+    // Only run on client
+    if (typeof window !== "undefined") {
+      const storedCart = localStorage.getItem('cart');
+      if (storedCart) setCart(JSON.parse(storedCart));
+    }
   }, []);
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
+    if (typeof window !== "undefined") {
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
   }, [cart]);
 
-  // Add product to cart
   const addToCart = (product) => {
     setCart(prevCart => {
       const existing = prevCart.find(item => item.id === product.id);
@@ -36,7 +38,6 @@ export function CartProvider({ children }) {
     });
   };
 
-  // Update quantity or remove
   const updateQuantity = (id, newQuantity) => {
     setCart(prevCart => {
       if (newQuantity <= 0) {
@@ -48,7 +49,6 @@ export function CartProvider({ children }) {
     });
   };
 
-  // Clear cart
   const clearCart = () => setCart([]);
 
   return (

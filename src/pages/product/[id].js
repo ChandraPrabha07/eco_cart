@@ -5,15 +5,7 @@ import Link from 'next/link'
 import Notification from '../../components/Notification'
 import { useCart } from '../../context/CartContext';
 
-export default function ProductDetail() {
-  const router = useRouter()
-  const { id } = router.query
-  const [product, setProduct] = useState(null)
-  const [notification, setNotification] = useState('')
-  const { addToCart } = useCart();
-
-  // Products and details
-  const products = [
+const products = [
     { id: 1, name: "Bamboo Toothbrush Set", price: 299, stock: 25, image: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=500", category: "Personal Care" },
     { id: 2, name: "Reusable Water Bottle", price: 499, stock: 18, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500", category: "Lifestyle" },
     { id: 3, name: "Organic Cotton Tote Bag", price: 199, stock: 30, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", category: "Bags" },
@@ -34,9 +26,9 @@ export default function ProductDetail() {
     { id: 18, name: "Bamboo Cutting Board", price: 599, stock: 21, image: "https://images.unsplash.com/photo-1556909114-b7ccfdc2b6cf?w=500", category: "Kitchen" },
     { id: 19, name: "Solar Garden Lights", price: 1499, stock: 9, image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500", category: "Home & Garden" },
     { id: 20, name: "Eco-Friendly Laundry Pods", price: 399, stock: 27, image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=500", category: "Home Care" }
-  ];
+];
 
-  const productDetails = {
+const productDetails = {
     1: {
       description: "Premium bamboo toothbrush set for sustainable oral care",
       features: [
@@ -380,7 +372,15 @@ export default function ProductDetail() {
         "Efficacy": "Works in cold water"
       }
     }
-  }
+};
+
+export default function ProductDetail() {
+  const router = useRouter()
+  const { id } = router.query
+  const [product, setProduct] = useState(null)
+  const [notification, setNotification] = useState('')
+  const { addToCart } = useCart();
+
   useEffect(() => {
     if (id) {
       const foundProduct = PRODUCTS.find(p => p.id === Number(id));
@@ -411,13 +411,13 @@ export default function ProductDetail() {
   return (
     <>
       <Head>
-        <title>{product.name} - Eco Card</title>
+        <title>{product.name} - Eco Cart</title>
         <meta name="description" content={product.description} />
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
       <div className="container">
         <header className="header">
-          <Link href="/" className="logo">🌱 Eco Card</Link>
+          <Link href="/" className="logo">🌱 Eco Cart</Link>
           <Link href="/cart" className="cart-link">🛒 Cart</Link>
         </header>
         <div className="product-detail">
