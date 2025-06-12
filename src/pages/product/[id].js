@@ -383,7 +383,7 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (id) {
-      const foundProduct = PRODUCTS.find(p => p.id === Number(id));
+      const foundProduct = products.find(p => p.id === Number(id));
       if (foundProduct) {
         setProduct({
           ...foundProduct,
