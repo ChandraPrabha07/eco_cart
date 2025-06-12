@@ -3,12 +3,32 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Notification from '../components/Notification';
 import { useCart } from '../context/CartContext';
+import LoginModal from '../components/LoginModal';
+import AddressModal from '../components/AddressModal';
+
 
 export default function Cart() {
   const { cart, updateQuantity, clearCart } = useCart();
   const [notification, setNotification] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [address, setAddress] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasAddress, setHasAddress] = useState(false);
+
+
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  useEffect(() => {
+  if (typeof window !== "undefined") {
+    const user = localStorage.getItem('user');
+    setIsLoggedIn(!!user);
+    const address = localStorage.getItem('default_address');
+    setHasAddress(!!address);
+    if (address) setAddress(JSON.parse(address));
+  }
+}, []);
+
 
   useEffect(() => {
     if (notification) {
@@ -18,13 +38,22 @@ export default function Cart() {
   }, [notification]);
 
   const handleBuyNow = () => {
-    if (cart.length === 0) {
-      setNotification("Your cart is empty.");
-      return;
-    }
-    alert(`Total Amount: ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\nProceeding to confirmation...`);
-    setShowConfirmation(true);
-  };
+  if (cart.length === 0) {
+    setNotification("Your cart is empty.");
+    return;
+  }
+  if (!isLoggedIn) {
+    setShowLogin(true);
+    return;
+  }
+  if (!hasAddress) {
+    setShowAddress(true);
+    return;
+  }
+  alert(`Total Amount: ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\nProceeding to confirmation...`);
+  setShowConfirmation(true);
+};
+
 
   const handleConfirm = () => {
     setShowConfirmation(false);
@@ -38,6 +67,26 @@ export default function Cart() {
         <title>Shopping Cart - Eco Cart</title>
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
+      <LoginModal
+        open={showLogin}
+        onClose={() => setShowLogin(false)}
+        onSuccess={() => {
+          setShowLogin(false);
+          setIsLoggedIn(true);
+          setShowAddress(true);
+        }}
+      />
+      <AddressModal
+      open={showAddress}
+      onClose={() => setShowAddress(false)}
+      onSuccess={() => {
+        setShowAddress(false);
+        setHasAddress(true);
+        setNotification('Address saved! Now you can confirm your order.');
+        setShowConfirmation(true);
+        }}
+      />
+      
       <div className="container">
         <header className="header">
           <Link href="/" className="logo">🌱 Eco Cart</Link>
