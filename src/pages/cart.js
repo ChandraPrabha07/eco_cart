@@ -35,15 +35,22 @@ export default function Cart() {
   return (
     <>
       <Head>
-        <title>Shopping Cart - Eco Card</title>
+        <title>Shopping Cart - Eco Cart</title>
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
       <div className="container">
         <header className="header">
-          <Link href="/" className="logo">🌱 Eco Card</Link>
+          <Link href="/" className="logo">🌱 Eco Cart</Link>
         </header>
         <div className="cart-page">
           <h1>Your Shopping Cart</h1>
+          {/* Show default address if available */}
+          {address && (
+            <div style={{ margin: '1rem 0', padding: '1rem', border: '1px solid #eee', borderRadius: 8 }}>
+              <h3>Shipping Address</h3>
+              <p>{address.display_name}</p>
+            </div>
+          )}
           {cart.length === 0 ? (
             <div className="empty-cart">
               <p>Your cart is empty</p>
