@@ -55,22 +55,23 @@ export default function Cart() {
 };
 
 
-  const handleConfirm = () => {
-    const user = JSON.parse(localStorage.getItem('sb-user'));
-    if (user) {
-      await supabase.from('orders').insert([
-     {
-      user_id: user.id,
-      items: cart,
-      status: 'confirmed',
-      created_at: new Date().toISOString(),
-     }
-     ]);
-    }
-    setShowConfirmation(false);
-    clearCart();
-    setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
-  };
+  const handleConfirm = async () => {
+  const user = JSON.parse(localStorage.getItem('sb-user'));
+  if (user) {
+    await supabase.from('orders').insert([
+      {
+        user_id: user.id,
+        items: cart,
+        status: 'confirmed',
+        created_at: new Date().toISOString(),
+      }
+    ]);
+  }
+  setShowConfirmation(false);
+  clearCart();
+  setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
+};
+
 
   return (
     <>
