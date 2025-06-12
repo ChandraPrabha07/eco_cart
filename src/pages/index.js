@@ -1,115 +1,108 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useState, useEffect } from 'react'
+import Head from 'next/head'
+import Link from 'next/link'
+import styles from '../styles/globals.css'
 
 export default function Home() {
+  const [products, setProducts] = useState([])
+  const [cart, setCart] = useState([])
+
+  // Initial products data with Unsplash images
+  useEffect(() => {
+    const initialProducts = [
+      { id: 1, name: "Bamboo Toothbrush Set", price: 12.99, stock: 25, image: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=300", category: "Personal Care" },
+      { id: 2, name: "Reusable Water Bottle", price: 24.99, stock: 18, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=300", category: "Lifestyle" },
+      { id: 3, name: "Organic Cotton Tote Bag", price: 15.99, stock: 30, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300", category: "Bags" },
+      { id: 4, name: "Solar Power Bank", price: 45.99, stock: 12, image: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=300", category: "Electronics" },
+      { id: 5, name: "Beeswax Food Wraps", price: 18.99, stock: 22, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300", category: "Kitchen" },
+      { id: 6, name: "Stainless Steel Straws", price: 8.99, stock: 35, image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300", category: "Kitchen" },
+      { id: 7, name: "Cork Yoga Mat", price: 89.99, stock: 8, image: "https://images.unsplash.com/photo-1506629905607-d5f42a50b25c?w=300", category: "Fitness" },
+      { id: 8, name: "Recycled Notebook Set", price: 16.99, stock: 28, image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300", category: "Stationery" },
+      { id: 9, name: "Hemp Backpack", price: 67.99, stock: 14, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300", category: "Bags" },
+      { id: 10, name: "Organic Shampoo Bar", price: 11.99, stock: 26, image: "https://images.unsplash.com/photo-1556228578-dd339f8f0265?w=300", category: "Personal Care" },
+      { id: 11, name: "Wooden Phone Stand", price: 19.99, stock: 20, image: "https://images.unsplash.com/photo-1434749071564-6cf342b5b0d6?w=300", category: "Electronics" },
+      { id: 12, name: "Biodegradable Phone Case", price: 22.99, stock: 16, image: "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=300", category: "Electronics" },
+      { id: 13, name: "Organic Tea Sampler", price: 29.99, stock: 19, image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300", category: "Food & Beverage" },
+      { id: 14, name: "Compostable Plates Set", price: 13.99, stock: 32, image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300", category: "Kitchen" },
+      { id: 15, name: "Natural Deodorant", price: 9.99, stock: 24, image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300", category: "Personal Care" },
+      { id: 16, name: "Recycled Denim Jacket", price: 78.99, stock: 11, image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300", category: "Clothing" },
+      { id: 17, name: "Plant-Based Protein Powder", price: 34.99, stock: 15, image: "https://images.unsplash.com/photo-1544716278-e513176f20a5?w=300", category: "Food & Beverage" },
+      { id: 18, name: "Bamboo Cutting Board", price: 25.99, stock: 21, image: "https://images.unsplash.com/photo-1556909114-b7ccfdc2b6cf?w=300", category: "Kitchen" },
+      { id: 19, name: "Solar Garden Lights", price: 42.99, stock: 9, image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300", category: "Home & Garden" },
+      { id: 20, name: "Eco-Friendly Laundry Pods", price: 17.99, stock: 27, image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300", category: "Home Care" }
+    ]
+    setProducts(initialProducts)
+  }, [])
+
+  const addToCart = (productId) => {
+    const product = products.find(p => p.id === productId)
+    if (product && product.stock > 0) {
+      setProducts(products.map(p => 
+        p.id === productId ? { ...p, stock: p.stock - 1 } : p
+      ))
+      
+      const existingItem = cart.find(item => item.id === productId)
+      if (existingItem) {
+        setCart(cart.map(item =>
+          item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
+        ))
+      } else {
+        setCart([...cart, { ...product, quantity: 1 }])
+      }
+    }
+  }
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    <>
+      <Head>
+        <title>Eco Card - Sustainable Products Store</title>
+        <meta name="description" content="Shop sustainable and eco-friendly products" />
+      </Head>
+
+      <div className="container">
+        <header className="header">
+          <h1 className="logo">🌱 Eco Card</h1>
+          <nav className="nav">
+            <Link href="/cart" className="cart-link">
+              🛒 Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+            </Link>
+          </nav>
+        </header>
+
+        <main className="main">
+          <h2 className="page-title">Sustainable Products for a Better Tomorrow</h2>
+          
+          <div className="products-grid">
+            {products.map((product) => (
+              <div key={product.id} className="product-card">
+                <div className="product-image-container">
+                  <img src={product.image} alt={product.name} className="product-image" />
+                  <span className="category-badge">{product.category}</span>
+                </div>
+                
+                <div className="product-info">
+                  <h3 className="product-name">{product.name}</h3>
+                  <p className="product-price">${product.price}</p>
+                  <p className="product-stock">Stock: {product.stock} available</p>
+                  
+                  <div className="product-actions">
+                    <Link href={`/product/${product.id}`} className="details-btn">
+                      View Details
+                    </Link>
+                    <button 
+                      onClick={() => addToCart(product.id)}
+                      disabled={product.stock === 0}
+                      className={`add-to-cart-btn ${product.stock === 0 ? 'disabled' : ''}`}
+                    >
+                      {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    </>
+  )
 }
