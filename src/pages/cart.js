@@ -5,7 +5,7 @@ import Notification from '../components/Notification';
 import { useCart } from '../context/CartContext';
 import LoginModal from '../components/LoginModal';
 import AddressModal from '../components/AddressModal';
-
+import { supabase } from '../utils/supabaseClient';
 
 export default function Cart() {
   const { cart, updateQuantity, clearCart } = useCart();
@@ -56,6 +56,17 @@ export default function Cart() {
 
 
   const handleConfirm = () => {
+    const user = JSON.parse(localStorage.getItem('sb-user'));
+    if (user) {
+      await supabase.from('orders').insert([
+     {
+      user_id: user.id,
+      items: cart,
+      status: 'confirmed',
+      created_at: new Date().toISOString(),
+     }
+     ]);
+    }
     setShowConfirmation(false);
     clearCart();
     setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
