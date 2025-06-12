@@ -2,12 +2,39 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Link from 'next/link'
+import Notification from '../../components/Notification'
+import { useCart } from '../../context/CartContext';
 
 export default function ProductDetail() {
   const router = useRouter()
   const { id } = router.query
   const [product, setProduct] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [notification, setNotification] = useState('')
+  const { addToCart } = useCart();
+
+  // Products and details
+  const products = [
+    { id: 1, name: "Bamboo Toothbrush Set", price: 299, stock: 25, image: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=500", category: "Personal Care" },
+    { id: 2, name: "Reusable Water Bottle", price: 499, stock: 18, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500", category: "Lifestyle" },
+    { id: 3, name: "Organic Cotton Tote Bag", price: 199, stock: 30, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", category: "Bags" },
+    { id: 4, name: "Solar Power Bank", price: 1799, stock: 12, image: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=500", category: "Electronics" },
+    { id: 5, name: "Beeswax Food Wraps", price: 399, stock: 22, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500", category: "Kitchen" },
+    { id: 6, name: "Stainless Steel Straws", price: 149, stock: 35, image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500", category: "Kitchen" },
+    { id: 7, name: "Cork Yoga Mat", price: 2499, stock: 8, image: "https://images.unsplash.com/photo-1506629905607-d5f42a50b25c?w=500", category: "Fitness" },
+    { id: 8, name: "Recycled Notebook Set", price: 349, stock: 28, image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500", category: "Stationery" },
+    { id: 9, name: "Hemp Backpack", price: 1799, stock: 14, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", category: "Bags" },
+    { id: 10, name: "Organic Shampoo Bar", price: 249, stock: 26, image: "https://images.unsplash.com/photo-1556228578-dd339f8f0265?w=500", category: "Personal Care" },
+    { id: 11, name: "Wooden Phone Stand", price: 399, stock: 20, image: "https://images.unsplash.com/photo-1434749071564-6cf342b5b0d6?w=500", category: "Electronics" },
+    { id: 12, name: "Biodegradable Phone Case", price: 499, stock: 16, image: "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=500", category: "Electronics" },
+    { id: 13, name: "Organic Tea Sampler", price: 599, stock: 19, image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=500", category: "Food & Beverage" },
+    { id: 14, name: "Compostable Plates Set", price: 299, stock: 32, image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500", category: "Kitchen" },
+    { id: 15, name: "Natural Deodorant", price: 199, stock: 24, image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=500", category: "Personal Care" },
+    { id: 16, name: "Recycled Denim Jacket", price: 2999, stock: 11, image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500", category: "Clothing" },
+    { id: 17, name: "Plant-Based Protein Powder", price: 899, stock: 15, image: "https://images.unsplash.com/photo-1544716278-e513176f20a5?w=500", category: "Food & Beverage" },
+    { id: 18, name: "Bamboo Cutting Board", price: 599, stock: 21, image: "https://images.unsplash.com/photo-1556909114-b7ccfdc2b6cf?w=500", category: "Kitchen" },
+    { id: 19, name: "Solar Garden Lights", price: 1499, stock: 9, image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500", category: "Home & Garden" },
+    { id: 20, name: "Eco-Friendly Laundry Pods", price: 399, stock: 27, image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=500", category: "Home Care" }
+  ];
 
   const productDetails = {
     1: {
@@ -354,49 +381,32 @@ export default function ProductDetail() {
       }
     }
   }
-
   useEffect(() => {
     if (id) {
-      const fetchProduct = async () => {
-        const products = [
-          { id: 1, name: "Bamboo Toothbrush Set", price: 12.99, stock: 25, image: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=500", category: "Personal Care" },
-          { id: 2, name: "Reusable Water Bottle", price: 24.99, stock: 18, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500", category: "Lifestyle" },
-          { id: 3, name: "Organic Cotton Tote Bag", price: 15.99, stock: 30, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", category: "Bags" },
-          { id: 4, name: "Solar Power Bank", price: 45.99, stock: 12, image: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=500", category: "Electronics" },
-          { id: 5, name: "Beeswax Food Wraps", price: 18.99, stock: 22, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500", category: "Kitchen" },
-          { id: 6, name: "Stainless Steel Straws", price: 8.99, stock: 35, image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500", category: "Kitchen" },
-          { id: 7, name: "Cork Yoga Mat", price: 89.99, stock: 8, image: "https://images.unsplash.com/photo-1506629905607-d5f42a50b25c?w=500", category: "Fitness" },
-          { id: 8, name: "Recycled Notebook Set", price: 16.99, stock: 28, image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500", category: "Stationery" },
-          { id: 9, name: "Hemp Backpack", price: 67.99, stock: 14, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", category: "Bags" },
-          { id: 10, name: "Organic Shampoo Bar", price: 11.99, stock: 26, image: "https://images.unsplash.com/photo-1556228578-dd339f8f0265?w=500", category: "Personal Care" },
-          { id: 11, name: "Wooden Phone Stand", price: 19.99, stock: 20, image: "https://images.unsplash.com/photo-1434749071564-6cf342b5b0d6?w=500", category: "Electronics" },
-          { id: 12, name: "Biodegradable Phone Case", price: 22.99, stock: 16, image: "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=500", category: "Electronics" },
-          { id: 13, name: "Organic Tea Sampler", price: 29.99, stock: 19, image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=500", category: "Food & Beverage" },
-          { id: 14, name: "Compostable Plates Set", price: 13.99, stock: 32, image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500", category: "Kitchen" },
-          { id: 15, name: "Natural Deodorant", price: 9.99, stock: 24, image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=500", category: "Personal Care" },
-          { id: 16, name: "Recycled Denim Jacket", price: 78.99, stock: 11, image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500", category: "Clothing" },
-          { id: 17, name: "Plant-Based Protein Powder", price: 34.99, stock: 15, image: "https://images.unsplash.com/photo-1544716278-e513176f20a5?w=500", category: "Food & Beverage" },
-          { id: 18, name: "Bamboo Cutting Board", price: 25.99, stock: 21, image: "https://images.unsplash.com/photo-1556909114-b7ccfdc2b6cf?w=500", category: "Kitchen" },
-          { id: 19, name: "Solar Garden Lights", price: 42.99, stock: 9, image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500", category: "Home & Garden" },
-          { id: 20, name: "Eco-Friendly Laundry Pods", price: 17.99, stock: 27, image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=500", category: "Home Care" }
-        ]
-        
-        const foundProduct = products.find(p => p.id === parseInt(id))
-        if (foundProduct) {
-          setProduct({
-            ...foundProduct,
-            ...productDetails[parseInt(id)]
-          })
-        }
-        setLoading(false)
+      const foundProduct = PRODUCTS.find(p => p.id === Number(id));
+      if (foundProduct) {
+        setProduct({
+          ...foundProduct,
+          ...productDetails[Number(id)]
+        });
       }
-      
-      fetchProduct()
     }
-  }, [id])
+  }, [id]);
 
-  if (loading) return <div className="loading">Loading...</div>
-  if (!product) return <div className="error">Product not found</div>
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(''), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart(product);
+    setNotification(`Added "${product.name}" to cart!`);
+  };
+
+  if (!product) return <div className="loading">Product not found</div>;
 
   return (
     <>
@@ -404,34 +414,29 @@ export default function ProductDetail() {
         <title>{product.name} - Eco Card</title>
         <meta name="description" content={product.description} />
       </Head>
-
+      <Notification message={notification} onClose={() => setNotification('')} />
       <div className="container">
         <header className="header">
           <Link href="/" className="logo">🌱 Eco Card</Link>
           <Link href="/cart" className="cart-link">🛒 Cart</Link>
         </header>
-
         <div className="product-detail">
           <div className="product-detail-image">
             <img src={product.image} alt={product.name} />
           </div>
-
           <div className="product-detail-info">
             <span className="category-badge">{product.category}</span>
             <h1 className="product-title">{product.name}</h1>
             <p className="product-description">{product.description}</p>
-            <p className="product-price">${product.price}</p>
-            <p className="product-stock">Available: {product.stock} in stock</p>
-
+            <p className="product-price">₹{product.price.toLocaleString('en-IN')}</p>
             <div className="product-features">
               <h3>Key Features:</h3>
               <ul>
-                {product.features?.map((feature, index) => (
-                  <li key={index}>{feature}</li>
+                {product.features?.map((feature, idx) => (
+                  <li key={idx}>{feature}</li>
                 ))}
               </ul>
             </div>
-
             {product.specifications && (
               <div className="product-specifications">
                 <h3>Specifications:</h3>
@@ -442,14 +447,13 @@ export default function ProductDetail() {
                 </ul>
               </div>
             )}
-
             <div className="product-actions">
-              <button className="add-to-cart-btn large">Add to Cart</button>
+              <button className="add-to-cart-btn large" onClick={handleAddToCart}>Add to Cart</button>
               <Link href="/" className="back-btn">← Back to Products</Link>
             </div>
           </div>
         </div>
       </div>
     </>
-  )
+  );
 }
