@@ -35,12 +35,12 @@ export default function Cart() {
   return (
     <>
       <Head>
-        <title>Shopping Cart - Eco Card</title>
+        <title>Shopping Cart - Eco Cart</title>
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
       <div className="container">
         <header className="header">
-          <Link href="/" className="logo">🌱 Eco Card</Link>
+          <Link href="/" className="logo">🌱 Eco Cart</Link>
         </header>
         <div className="cart-page">
           <h1>Your Shopping Cart</h1>

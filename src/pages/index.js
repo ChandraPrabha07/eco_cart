@@ -46,7 +46,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Eco CarT - Sustainable Products Store</title>
+        <title>Eco Cart - Sustainable Products Store</title>
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
       <div className="container">
