@@ -372,7 +372,7 @@ const productDetails = {
         "Efficacy": "Works in cold water"
       }
     }
-};
+}
 
 export default function ProductDetail() {
   const router = useRouter()
