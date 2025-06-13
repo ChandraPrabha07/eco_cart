@@ -46,48 +46,107 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Eco Cart - Sustainable Products Store</title>
+        <title>Eco Cart - Sustainable Shopping</title>
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
+      
       <div className="container">
-        <header className="header">
-          <h1 className="logo">🌱 ECO CART</h1>
-          <nav className="nav">
-            <Link href="/cart" className="cart-link">
-              🛒 Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
-            </Link>
-          </nav>
-        </header>
-        <main className="main">
-          <h2 className="page-title">Sustainable Products for a Better Tomorrow</h2>
-          <div className="products-grid">
-            {products.map(product => (
-              <div key={product.id} className="product-card">
-                <div className="product-image-container">
-                  <img src={product.image} alt={product.name} className="product-image" />
-                  <span className="category-badge">{product.category}</span>
-                </div>
-                <div className="product-info">
-                  <h3 className="product-name">{product.name}</h3>
-                  <p className="product-price">₹{product.price.toLocaleString('en-IN')}</p>
-                  <p className="product-stock">Stock: {product.stock} available</p>
-                  <div className="product-actions">
-                    <Link href={`/product/${product.id}`} className="details-btn">
-                      View Details
-                    </Link>
-                    <button
-                      onClick={() => handleAddToCart(product.id)}
-                      disabled={product.stock === 0}
-                      className={`add-to-cart-btn ${product.stock === 0 ? 'disabled' : ''}`}
-                    >
-                      {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                    </button>
-                  </div>
-                </div>
+        <div className="hero">
+          <h1>🌱 Welcome to Eco Cart</h1>
+          <p>Discover sustainable products for a greener tomorrow</p>
+        </div>
+
+        <div className="products-grid">
+          {products.map(product => (
+            <div key={product.id} className="product-card">
+              <img src={product.image} alt={product.name} />
+              <div className="product-info">
+                <h3>{product.name}</h3>
+                <p className="description">{product.description}</p>
+                <p className="price">₹{product.price.toLocaleString('en-IN')}</p>
+                <button 
+                  onClick={() => handleAddToCart(product)}
+                  className="add-to-cart-btn"
+                >
+                  Add to Cart
+                </button>
               </div>
-            ))}
-          </div>
-        </main>
+            </div>
+          ))}
+        </div>
+
+        <style jsx>{`
+          .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+          }
+          .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+          }
+          .hero h1 {
+            font-size: 2.5rem;
+            color: #28a745;
+            margin-bottom: 1rem;
+          }
+          .hero p {
+            font-size: 1.2rem;
+            color: #6c757d;
+          }
+          .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+          }
+          .product-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+          }
+          .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          }
+          .product-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+          }
+          .product-info {
+            padding: 1.5rem;
+          }
+          .product-info h3 {
+            margin-bottom: 0.5rem;
+            color: #333;
+          }
+          .description {
+            color: #6c757d;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+          }
+          .price {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 1rem;
+          }
+          .add-to-cart-btn {
+            width: 100%;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+          }
+          .add-to-cart-btn:hover {
+            background: #0056b3;
+          }
+        `}</style>
       </div>
     </>
   );

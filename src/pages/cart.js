@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import Notification from '../components/Notification';
 import { useCart } from '../context/CartContext';
-import LoginModal from '../components/LoginModal';
-import AddressModal from '../components/AddressModal';
 import { supabase } from '../utils/supabaseClient';
 
 export default function Cart() {
@@ -12,66 +11,78 @@ export default function Cart() {
   const [notification, setNotification] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [address, setAddress] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showAddress, setShowAddress] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [hasAddress, setHasAddress] = useState(false);
-
-
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+  
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  useEffect(() => {
-  if (typeof window !== "undefined") {
-    const user = localStorage.getItem('user');
-    setIsLoggedIn(!!user);
-    const address = localStorage.getItem('default_address');
-    setHasAddress(!!address);
-    if (address) setAddress(JSON.parse(address));
-  }
-}, []);
 
+  // Check authentication status and load address
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem('sb-user');
+      if (storedUser) setUser(JSON.parse(storedUser));
+      
+      const storedAddress = localStorage.getItem('default_address');
+      if (storedAddress) setAddress(JSON.parse(storedAddress));
+    }
+  }, []);
 
   useEffect(() => {
     if (notification) {
-      const timer = setTimeout(() => setNotification(''), 2000);
+      const timer = setTimeout(() => setNotification(''), 3000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
 
   const handleBuyNow = () => {
-  if (cart.length === 0) {
-    setNotification("Your cart is empty.");
-    return;
-  }
-  if (!isLoggedIn) {
-    setShowLogin(true);
-    return;
-  }
-  if (!hasAddress) {
-    setShowAddress(true);
-    return;
-  }
-  alert(`Total Amount: ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\nProceeding to confirmation...`);
-  setShowConfirmation(true);
-};
+    if (cart.length === 0) {
+      setNotification("Your cart is empty.");
+      return;
+    }
 
+    // Check if user is logged in
+    if (!user) {
+      setNotification("Please login to continue with your purchase.");
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
+      return;
+    }
+
+    // If logged in, proceed to confirmation
+    setShowConfirmation(true);
+  };
 
   const handleConfirm = async () => {
-  const user = JSON.parse(localStorage.getItem('sb-user'));
-  if (user) {
-    await supabase.from('orders').insert([
-      {
-        user_id: user.id,
-        items: cart,
-        status: 'confirmed',
-        created_at: new Date().toISOString(),
-      }
-    ]);
-  }
-  setShowConfirmation(false);
-  clearCart();
-  setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
-};
+    try {
+      // Save order to database
+      if (user) {
+        const { error } = await supabase.from('orders').insert([
+          {
+            user_id: user.id,
+            items: cart,
+            status: 'confirmed',
+            total_amount: total,
+            shipping_address: address?.display_name || 'No address provided',
+            created_at: new Date().toISOString(),
+          }
+        ]);
 
+        if (error) {
+          console.error('Error saving order:', error);
+          setNotification("Error saving order. Please try again.");
+          return;
+        }
+      }
+
+      setShowConfirmation(false);
+      clearCart();
+      setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
+    } catch (error) {
+      console.error('Error confirming order:', error);
+      setNotification("Error confirming order. Please try again.");
+    }
+  };
 
   return (
     <>
@@ -79,39 +90,27 @@ export default function Cart() {
         <title>Shopping Cart - Eco Cart</title>
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
-      <LoginModal
-        open={showLogin}
-        onClose={() => setShowLogin(false)}
-        onSuccess={() => {
-          setShowLogin(false);
-          setIsLoggedIn(true);
-          setShowAddress(true);
-        }}
-      />
-      <AddressModal
-      open={showAddress}
-      onClose={() => setShowAddress(false)}
-      onSuccess={() => {
-        setShowAddress(false);
-        setHasAddress(true);
-        setNotification('Address saved! Now you can confirm your order.');
-        setShowConfirmation(true);
-        }}
-      />
       
       <div className="container">
-        <header className="header">
-          <Link href="/" className="logo">🌱 Eco Cart</Link>
-        </header>
         <div className="cart-page">
           <h1>Your Shopping Cart</h1>
-          {/* Show default address if available */}
-          {address && (
-            <div style={{ margin: '1rem 0', padding: '1rem', border: '1px solid #eee', borderRadius: 8 }}>
-              <h3>Shipping Address</h3>
-              <p>{address.display_name}</p>
+          
+          {/* Show user info if logged in */}
+          {user && (
+            <div className="user-info">
+              <p>👤 Logged in as: {user.email}</p>
             </div>
           )}
+          
+          {/* Show default address if available */}
+          {address && (
+            <div className="address-info">
+              <h3>📍 Shipping Address</h3>
+              <p>{address.display_name}</p>
+              <Link href="/address">Change Address</Link>
+            </div>
+          )}
+          
           {cart.length === 0 ? (
             <div className="empty-cart">
               <p>Your cart is empty</p>
@@ -138,6 +137,7 @@ export default function Cart() {
                   </div>
                 ))}
               </div>
+              
               <div className="cart-summary">
                 <div className="total-amount">
                   <h2>Total: ₹{total.toLocaleString('en-IN')}</h2>
@@ -151,38 +151,70 @@ export default function Cart() {
               </div>
             </>
           )}
+          
           {showConfirmation && (
             <div className="confirmation-modal">
               <div className="confirmation-content">
                 <h2>Order Confirmation</h2>
                 <p>Your total bill is <strong>₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></p>
-                <p>Thank you for shopping sustainably with Eco Card!</p>
+                {address && (
+                  <p>Shipping to: <strong>{address.display_name}</strong></p>
+                )}
+                <p>Thank you for shopping sustainably with Eco Cart!</p>
                 <button onClick={handleConfirm} className="buy-now-btn">Confirm Order</button>
+                <button onClick={() => setShowConfirmation(false)} className="cancel-btn">Cancel</button>
               </div>
-              <style jsx>{`
-                .confirmation-modal {
-                  position: fixed;
-                  top: 0;
-                  left: 0;
-                  width: 100vw;
-                  height: 100vh;
-                  background: rgba(0,0,0,0.3);
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  z-index: 2000;
-                }
-                .confirmation-content {
-                  background: #fff;
-                  padding: 40px 30px;
-                  border-radius: 12px;
-                  text-align: center;
-                  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-                }
-              `}</style>
             </div>
           )}
         </div>
+
+        <style jsx>{`
+          .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+          }
+          .user-info, .address-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+          }
+          .user-info p {
+            margin: 0;
+            color: #28a745;
+            font-weight: 500;
+          }
+          .confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+          }
+          .confirmation-content {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            max-width: 500px;
+          }
+          .cancel-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            margin-left: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+          }
+        `}</style>
       </div>
     </>
   );

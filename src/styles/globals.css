@@ -154,7 +154,7 @@ body {
 
 .details-btn {
   flex: 1;
-  background: #667eea;
+  background: #afea66;
   color: white;
   padding: 10px;
   border: none;
@@ -166,7 +166,7 @@ body {
 }
 
 .details-btn:hover {
-  background: #f99add;
+  background: #75f5ca;
   transform: translateY(-1px);
 }
 
