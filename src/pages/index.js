@@ -5,7 +5,7 @@ import { useRouter } from 'next/router';
 import Notification from '../components/Notification'
 import { useCart } from '../context/CartContext';
 
-const product=[
+const products=[
       { id: 1, name: "Bamboo Toothbrush Set", price: 299, stock: 25, image: "https://images.unsplash.com/photo-1646376156066-174d86571e5b?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8YmFtYm9vJTIwdG9vdGhicnVzaHxlbnwwfHwwfHx8MA%3D%3D", category: "Personal Care" },
       { id: 2, name: "Reusable Water Bottle", price: 499, stock: 18, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=300", category: "Lifestyle" },
       { id: 3, name: "Organic Cotton Tote Bag", price: 199, stock: 30, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300", category: "Bags" },
