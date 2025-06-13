@@ -61,7 +61,7 @@ export default function Cart() {
           }
         ]);
         if (error) {
-          console.error('Order save error:', error.message); // Debug log
+          console.error('Order save error:', error); // Debug log
           setNotification("Error saving order. Please try again.");
           return;
         }
