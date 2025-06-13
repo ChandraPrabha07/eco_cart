@@ -18,8 +18,23 @@ export default function Cart() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem('sb-user');
-      if (storedUser) setUser(JSON.parse(storedUser));
+      useEffect(() => {
+        const fetchUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      setUser(session.user); // this gives you the actual `auth.uid()`
+    } else {
+      setUser(null);
+    }
+
+    // Also load address from localStorage
+    const storedAddress = localStorage.getItem('default_address');
+    if (storedAddress) setAddress(JSON.parse(storedAddress));
+  };
+
+  fetchUser();
+}, []);
+
       const storedAddress = localStorage.getItem('default_address');
       if (storedAddress) setAddress(JSON.parse(storedAddress));
     }
@@ -48,15 +63,13 @@ export default function Cart() {
   };
 
   const handleConfirm = async () => {
-    try {
-      if (!user) {
-        setNotification("User not logged in.");
-        return;
-      }
+  try {
+    if (user) {
+      console.log("User ID being used for order:", user.id);
 
       const { error } = await supabase.from('orders').insert([
         {
-          user_id: user.id,
+          user_id: user.id, // this now equals auth.uid()
           items: cart,
           status: 'confirmed',
           total_amount: total,
@@ -66,19 +79,21 @@ export default function Cart() {
       ]);
 
       if (error) {
-        console.error("Error inserting order:", error.message);
+        console.error('Order save error:', error);
         setNotification("Failed to save order. Please check permissions or required fields.");
         return;
       }
 
-      setShowConfirmation(false);
       clearCart();
       setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      setNotification("Unexpected error while confirming order.");
+      setShowConfirmation(false);
     }
-  };
+  } catch (error) {
+    console.error('Order confirm exception:', error);
+    setNotification("Error confirming order. Please try again.");
+  }
+};
+
 
   const handleChangeAddress = () => {
     router.push(`/address?from=${encodeURIComponent(router.asPath)}`);
