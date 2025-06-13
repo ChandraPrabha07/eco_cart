@@ -49,33 +49,37 @@ export default function Cart() {
 
   const handleConfirm = async () => {
     try {
-      if (user) {
-        const { error } = await supabase.from('orders').insert([
-          {
-            user_id: user.id,
-            items: cart,
-            status: 'confirmed',
-            total_amount: total,
-            shipping_address: address?.display_name || 'No address provided',
-            created_at: new Date().toISOString(),
-          }
-        ]);
-        if (error) {
-          console.error('Order save error:', error); // Debug log
-          setNotification("Error saving order. Please try again.");
-          return;
-        }
+      if (!user) {
+        setNotification("User not logged in.");
+        return;
       }
+
+      const { error } = await supabase.from('orders').insert([
+        {
+          user_id: user.id,
+          items: cart,
+          status: 'confirmed',
+          total_amount: total,
+          shipping_address: address?.display_name || 'No address provided',
+          created_at: new Date().toISOString()
+        }
+      ]);
+
+      if (error) {
+        console.error("Error inserting order:", error.message);
+        setNotification("Failed to save order. Please check permissions or required fields.");
+        return;
+      }
+
       setShowConfirmation(false);
       clearCart();
       setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
-    } catch (error) {
-      console.error('Order confirm exception:', error); // Debug log
-      setNotification("Error confirming order. Please try again.");
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setNotification("Unexpected error while confirming order.");
     }
   };
 
-  // When changing address, send user back to this page after updating
   const handleChangeAddress = () => {
     router.push(`/address?from=${encodeURIComponent(router.asPath)}`);
   };
@@ -163,6 +167,8 @@ export default function Cart() {
             </div>
           )}
         </div>
+
+        {/* Styles */}
         <style jsx>{`
           .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
           .user-info, .address-info { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
@@ -188,3 +194,4 @@ export default function Cart() {
     </>
   );
 }
+
