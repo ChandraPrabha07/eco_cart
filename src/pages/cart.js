@@ -16,28 +16,24 @@ export default function Cart() {
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+  // ✅ Correct useEffect – No nesting
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      useEffect(() => {
-        const fetchUser = async () => {
+    const fetchUser = async () => {
+      if (typeof window !== 'undefined') {
         const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setUser(session.user); // this gives you the actual `auth.uid()`
-    } else {
-      setUser(null);
-    }
+        if (session?.user) {
+          setUser(session.user); // sets user from Supabase auth
+        } else {
+          setUser(null);
+        }
 
-    // Also load address from localStorage
-    const storedAddress = localStorage.getItem('default_address');
-    if (storedAddress) setAddress(JSON.parse(storedAddress));
-  };
+        // Load address from localStorage
+        const storedAddress = localStorage.getItem('default_address');
+        if (storedAddress) setAddress(JSON.parse(storedAddress));
+      }
+    };
 
-  fetchUser();
-}, []);
-
-      const storedAddress = localStorage.getItem('default_address');
-      if (storedAddress) setAddress(JSON.parse(storedAddress));
-    }
+    fetchUser();
   }, []);
 
   useEffect(() => {
@@ -63,37 +59,34 @@ export default function Cart() {
   };
 
   const handleConfirm = async () => {
-  try {
-    if (user) {
-      console.log("User ID being used for order:", user.id);
+    try {
+      if (user) {
+        const { error } = await supabase.from('orders').insert([
+          {
+            user_id: user.id,
+            items: cart,
+            status: 'confirmed',
+            total_amount: total,
+            shipping_address: address?.display_name || 'No address provided',
+            created_at: new Date().toISOString()
+          }
+        ]);
 
-      const { error } = await supabase.from('orders').insert([
-        {
-          user_id: user.id, // this now equals auth.uid()
-          items: cart,
-          status: 'confirmed',
-          total_amount: total,
-          shipping_address: address?.display_name || 'No address provided',
-          created_at: new Date().toISOString()
+        if (error) {
+          console.error('Order save error:', error);
+          setNotification("Failed to save order. Please check permissions or required fields.");
+          return;
         }
-      ]);
 
-      if (error) {
-        console.error('Order save error:', error);
-        setNotification("Failed to save order. Please check permissions or required fields.");
-        return;
+        clearCart();
+        setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
+        setShowConfirmation(false);
       }
-
-      clearCart();
-      setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
-      setShowConfirmation(false);
+    } catch (error) {
+      console.error('Order confirm exception:', error);
+      setNotification("Error confirming order. Please try again.");
     }
-  } catch (error) {
-    console.error('Order confirm exception:', error);
-    setNotification("Error confirming order. Please try again.");
-  }
-};
-
+  };
 
   const handleChangeAddress = () => {
     router.push(`/address?from=${encodeURIComponent(router.asPath)}`);
@@ -183,7 +176,6 @@ export default function Cart() {
           )}
         </div>
 
-        {/* Styles */}
         <style jsx>{`
           .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
           .user-info, .address-info { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
@@ -209,4 +201,3 @@ export default function Cart() {
     </>
   );
 }
-
