@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 
 export default function Address() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
   const [saved, setSaved] = useState(false);
+  const router = useRouter();
+  const { from } = router.query;
 
   // Search OpenStreetMap Nominatim API
   async function handleSearch(e) {
@@ -27,6 +30,10 @@ export default function Address() {
     if (selected) {
       localStorage.setItem('default_address', JSON.stringify(selected));
       setSaved(true);
+      // Redirect back to previous page or cart after a short delay
+      setTimeout(() => {
+        router.push(from || '/cart');
+      }, 1000);
     }
   }
 
@@ -66,9 +73,10 @@ export default function Address() {
       )}
       {saved && (
         <div style={{ color: 'green', marginTop: 12 }}>
-          Default address saved!
+          Default address saved! Redirecting...
         </div>
       )}
     </div>
   );
 }
+

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router';
 import Notification from '../components/Notification'
 import { useCart } from '../context/CartContext';
 
-const PRODUCTS=[
+const product=[
       { id: 1, name: "Bamboo Toothbrush Set", price: 299, stock: 25, image: "https://images.unsplash.com/photo-1646376156066-174d86571e5b?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8YmFtYm9vJTIwdG9vdGhicnVzaHxlbnwwfHwwfHx8MA%3D%3D", category: "Personal Care" },
       { id: 2, name: "Reusable Water Bottle", price: 499, stock: 18, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=300", category: "Lifestyle" },
       { id: 3, name: "Organic Cotton Tote Bag", price: 199, stock: 30, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300", category: "Bags" },
@@ -28,20 +29,21 @@ const PRODUCTS=[
 ];
 
 export default function Home() {
-  const [products, setProducts] = useState(PRODUCTS);
+  const router = useRouter();
+  const { addToCart } = useCart();
   const [notification, setNotification] = useState('');
-  const { cart, addToCart } = useCart();
 
-  const handleAddToCart = (productId) => {
-    const product = products.find(p => p.id === productId);
-    if (product && product.stock > 0) {
-      setProducts(products.map(p =>
-        p.id === productId ? { ...p, stock: p.stock - 1 } : p
-      ));
-      addToCart(product);
-      setNotification(`Added "${product.name}" to cart!`);
-    }
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    setNotification(`${product.name} added to cart!`);
   };
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(''), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   return (
     <>
@@ -49,7 +51,7 @@ export default function Home() {
         <title>Eco Cart - Sustainable Shopping</title>
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
-      
+
       <div className="container">
         <div className="hero">
           <h1>🌱 Welcome to Eco Cart</h1>
@@ -63,37 +65,30 @@ export default function Home() {
               <div className="product-info">
                 <h3>{product.name}</h3>
                 <p className="description">{product.description}</p>
+                <p className="stock">
+                  Stock: {product.stock > 0 ? product.stock : <span style={{color:'red'}}>Out of stock</span>}
+                </p>
                 <p className="price">₹{product.price.toLocaleString('en-IN')}</p>
-                <button 
+                <button
                   onClick={() => handleAddToCart(product)}
+                  disabled={product.stock === 0}
                   className="add-to-cart-btn"
                 >
                   Add to Cart
+                </button>
+                <button
+                  onClick={() => router.push(`/product/${product.id}`)}
+                  className="view-details-btn"
+                >
+                  View Details
                 </button>
               </div>
             </div>
           ))}
         </div>
-
         <style jsx>{`
-          .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-          }
-          .hero {
-            text-align: center;
-            margin-bottom: 3rem;
-          }
-          .hero h1 {
-            font-size: 2.5rem;
-            color: #28a745;
-            margin-bottom: 1rem;
-          }
-          .hero p {
-            font-size: 1.2rem;
-            color: #6c757d;
-          }
+          .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+          .hero { text-align: center; margin-bottom: 3rem; }
           .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -109,43 +104,19 @@ export default function Home() {
             transform: translateY(-4px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
           }
-          .product-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
+          .product-card img { width: 100%; height: 200px; object-fit: cover; }
+          .product-info { padding: 1.5rem; }
+          .product-info h3 { margin-bottom: 0.5rem; color: #333; }
+          .description { color: #6c757d; margin-bottom: 1rem; font-size: 0.9rem; }
+          .stock { margin-bottom: 0.5rem; }
+          .price { font-size: 1.25rem; font-weight: bold; color: #28a745; margin-bottom: 1rem; }
+          .add-to-cart-btn, .view-details-btn {
+            width: 48%; margin-right: 2%; margin-bottom: 0.5rem;
+            background: #007bff; color: white; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer;
+            font-size: 1rem; transition: background 0.2s;
           }
-          .product-info {
-            padding: 1.5rem;
-          }
-          .product-info h3 {
-            margin-bottom: 0.5rem;
-            color: #333;
-          }
-          .description {
-            color: #6c757d;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-          }
-          .price {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #28a745;
-            margin-bottom: 1rem;
-          }
-          .add-to-cart-btn {
-            width: 100%;
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 0.75rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.2s;
-          }
-          .add-to-cart-btn:hover {
-            background: #0056b3;
-          }
+          .add-to-cart-btn:disabled { background: #aaa; cursor: not-allowed; }
+          .view-details-btn { background: #28a745; }
         `}</style>
       </div>
     </>
