@@ -61,6 +61,7 @@ export default function Cart() {
           }
         ]);
         if (error) {
+          console.error('Order save error:', error.message); // Debug log
           setNotification("Error saving order. Please try again.");
           return;
         }
@@ -69,6 +70,7 @@ export default function Cart() {
       clearCart();
       setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
     } catch (error) {
+      console.error('Order confirm exception:', error); // Debug log
       setNotification("Error confirming order. Please try again.");
     }
   };
@@ -116,9 +118,16 @@ export default function Cart() {
                       <p className="cart-item-price">₹{item.price.toLocaleString('en-IN')}</p>
                     </div>
                     <div className="quantity-controls">
-                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        aria-label="Decrease quantity"
+                        disabled={item.quantity <= 1}
+                      >-</button>
                       <span className="quantity">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        aria-label="Increase quantity"
+                      >+</button>
                     </div>
                     <div className="cart-item-total">
                       ₹{(item.price * item.quantity).toLocaleString('en-IN')}
@@ -158,6 +167,19 @@ export default function Cart() {
           .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
           .user-info, .address-info { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
           .user-info p { margin: 0; color: #28a745; font-weight: 500; }
+          .cart-items { margin-bottom: 2rem; }
+          .cart-item { display: flex; align-items: center; margin-bottom: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 1rem; }
+          .cart-item-image { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 1rem; }
+          .cart-item-details { flex: 2; }
+          .cart-item-price { color: #28a745; font-weight: bold; }
+          .quantity-controls { display: flex; align-items: center; gap: 0.5rem; }
+          .quantity-controls button { padding: 0.25rem 0.75rem; font-size: 1.2rem; border: none; background: #e9ecef; border-radius: 4px; cursor: pointer; }
+          .quantity-controls button:disabled { background: #ccc; cursor: not-allowed; }
+          .quantity { min-width: 2rem; text-align: center; }
+          .cart-item-total { font-weight: bold; margin-left: 1rem; }
+          .cart-summary { background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: right; }
+          .buy-now-btn { background: #28a745; color: white; border: none; padding: 0.75rem 2rem; border-radius: 4px; cursor: pointer; margin-right: 1rem; }
+          .continue-shopping { margin-left: 1rem; color: #007bff; text-decoration: underline; }
           .confirmation-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
           .confirmation-content { background: #fff; padding: 2rem; border-radius: 12px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.15); max-width: 500px; }
           .cancel-btn { background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; margin-left: 1rem; border-radius: 4px; cursor: pointer; }
