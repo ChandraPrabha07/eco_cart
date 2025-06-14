@@ -1,106 +1,73 @@
-import { useState } from 'react';
-import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabaseClient';
-import Notification from '../components/Notification';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
 
-function AddressInput({ onSelect }) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-
-  const searchAddress = async (q) => {
-    if (!q) return setResults([]);
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`
-    );
-    const data = await res.json();
-    setResults(data);
-  };
-
-  const handleChange = (e) => {
-    setQuery(e.target.value);
-    searchAddress(e.target.value);
-  };
-
-  return (
-    <div>
-      <input
-        type="text"
-        placeholder="Enter your address"
-        value={query}
-        onChange={handleChange}
-        style={{ width: '100%', padding: '8px' }}
-      />
-      <ul style={{ listStyle: 'none', padding: 0, maxHeight: 150, overflowY: 'auto', background: '#fff', border: '1px solid #eee', position: 'absolute', zIndex: 10, width: '100%' }}>
-        {results.map((r) => (
-          <li
-            key={r.place_id}
-            style={{ cursor: 'pointer', padding: '4px' }}
-            onClick={() => {
-              onSelect(r);
-              setQuery(r.display_name);
-              setResults([]);
-            }}
-          >
-            {r.display_name}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default function Signup() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [address, setAddress] = useState('');
-  const [coordinates, setCoordinates] = useState({ lat: '', lon: '' });
-  const [notification, setNotification] = useState('');
+export default function SignUp() {
+  const [form, setForm] = useState({
+    email: '', password: '', name: '', country: '', phone: ''
+  });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleAddressSelect = (place) => {
-    setAddress(place.display_name);
-    setCoordinates({ lat: place.lat, lon: place.lon });
-  };
+  // Check if already logged in
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem('sb-user');
+      if (stored) {
+        router.push('/'); // Redirect to home if already logged in
+      }
+    }
+  }, [router]);
 
-  const handleSignup = async (e) => {
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async e => {
     e.preventDefault();
+    setError('');
     setLoading(true);
 
-    // 1. Sign up user
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) {
-      setNotification(error.message);
-      setLoading(false);
-      return;
-    }
-
-    // 2. Save address to profiles table (if you want to wait for email confirmation, you can do this later)
-    const user = data.user;
-    if (user) {
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: user.id,
-        default_address: address,
-        latitude: coordinates.lat,
-        longitude: coordinates.lon,
+    try {
+      // 1. Sign up user
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
       });
-      if (profileError) {
-        setNotification('Signup succeeded, but failed to save address.');
+
+      if (signUpError) {
+        setError(signUpError.message);
         setLoading(false);
         return;
       }
-    }
 
-    setNotification('Signup successful! Please check your email to confirm your account.');
-    setLoading(false);
-    setTimeout(() => {
-      router.push('/login');
-    }, 2000);
+      // 2. Insert profile
+      const user = data.user;
+      if (user) {
+        const { error: profileError } = await supabase.from('profiles').insert([
+          {
+            id: user.id,
+            name: form.name,
+            country: form.country,
+            phone: form.phone,
+          }
+        ]);
+
+        if (profileError) {
+          setError(profileError.message);
+        } else {
+          localStorage.setItem('sb-user', JSON.stringify(user));
+          // Redirect to shopping list (home page) after successful signup
+          router.push('/');
+        }
+      } else {
+        setError('Please check your email to confirm your account.');
+      }
+    } catch (err) {
+      setError('Signup failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -108,43 +75,117 @@ export default function Signup() {
       <Head>
         <title>Sign Up - Eco Cart</title>
       </Head>
-      <Notification message={notification} onClose={() => setNotification('')} />
+      <div className="auth-container">
+        <div className="auth-form">
+          <h2>Join Eco Cart</h2>
+          <form onSubmit={handleSubmit}>
+            <input
+              name="name"
+              placeholder="Full Name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+            <input
+              name="country"
+              placeholder="Country"
+              value={form.country}
+              onChange={handleChange}
+              required
+            />
+            <input
+              name="phone"
+              placeholder="Phone Number"
+              value={form.phone}
+              onChange={handleChange}
+              required
+            />
+            <input
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+            <input
+              name="password"
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Sign Up'}
+            </button>
+            {error && <p className="error">{error}</p>}
+          </form>
+          <p>
+            Already have an account? <a href="/login">Login here</a>
+          </p>
+        </div>
 
-      <div style={{ maxWidth: 400, margin: '2rem auto', padding: 24, background: '#fafafa', borderRadius: 8 }}>
-        <h1>Sign Up</h1>
-        <form onSubmit={handleSignup}>
-          <label>Email:</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: 16 }}
-          />
-
-          <label>Password:</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: 16 }}
-          />
-
-          <label>Address (powered by OpenStreetMap):</label>
-          <div style={{ position: 'relative', marginBottom: 16 }}>
-            <AddressInput onSelect={handleAddressSelect} />
-          </div>
-          {address && (
-            <div style={{ marginBottom: 16, color: 'green', fontSize: '0.95rem' }}>
-              Selected: {address}
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', background: '#28a745', color: '#fff', border: 'none', borderRadius: 4 }}>
-            {loading ? 'Signing up...' : 'Sign Up'}
-          </button>
-        </form>
+        <style jsx>{`
+          .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+            padding: 2rem;
+          }
+          .auth-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+          }
+          .auth-form h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #333;
+          }
+          .auth-form input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+          }
+          .auth-form button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+          }
+          .auth-form button:hover {
+            background: #218838;
+          }
+          .auth-form button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+          }
+          .error {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 1rem;
+          }
+          .auth-form p {
+            text-align: center;
+            margin-top: 1rem;
+          }
+          .auth-form a {
+            color: #007bff;
+            text-decoration: none;
+          }
+        `}</style>
       </div>
     </>
   );
