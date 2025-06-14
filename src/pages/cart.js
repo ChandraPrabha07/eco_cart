@@ -15,21 +15,27 @@ export default function Cart() {
   const router = useRouter();
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Fetch user and default address from Supabase
   useEffect(() => {
     const fetchUserAndAddress = async () => {
       if (typeof window !== 'undefined') {
+        // Get current session/user
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
 
-          // Fetch default address from Supabase profiles table
+          // Fetch default address from profiles table
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('default_address')
             .eq('id', session.user.id)
             .single();
 
-          if (profile && profile.default_address) {
+          if (error) {
+            console.error('Error fetching profile:', error.message);
+            setAddress(null);
+          } else if (profile && profile.default_address) {
             setAddress(profile.default_address);
           } else {
             setAddress(null);
@@ -41,26 +47,6 @@ export default function Cart() {
       }
     };
     fetchUserAndAddress();
-  }, []);
-  
-  // ✅ Correct useEffect – No nesting
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (typeof window !== 'undefined') {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setUser(session.user); // sets user from Supabase auth
-        } else {
-          setUser(null);
-        }
-
-        // Load address from localStorage
-        const storedAddress = localStorage.getItem('default_address');
-        if (storedAddress) setAddress(JSON.parse(storedAddress));
-      }
-    };
-
-    fetchUser();
   }, []);
 
   useEffect(() => {
@@ -88,24 +74,26 @@ export default function Cart() {
   const handleConfirm = async () => {
     try {
       if (user) {
-        const { error } = await supabase.from('orders').insert([
+        // 1. Insert the order
+        const { error: orderError } = await supabase.from('orders').insert([
           {
             user_id: user.id,
             items: cart,
             status: 'confirmed',
+            shipping_address: address || 'No address provided',
             total_amount: total,
-            shipping_address: address?.display_name || 'No address provided',
             created_at: new Date().toISOString()
           }
         ]);
-
-        if (error) {
-          console.error('Order save error:', error);
+        if (orderError) {
+          console.error('Order save error:', orderError);
           setNotification("Failed to save order. Please check permissions or required fields.");
           return;
         }
+
+        // 2. Update stock for each product in the cart
         for (const item of cart) {
-          // Fetch the latest stock from the DB (optional, for accuracy)
+          // Fetch the latest stock from the DB (for accuracy)
           const { data: productData, error: fetchError } = await supabase
             .from('products')
             .select('stock')
@@ -160,7 +148,7 @@ export default function Cart() {
           {address && (
             <div className="address-info">
               <h3>📍 Shipping Address</h3>
-              <p>{address.display_name}</p>
+              <p>{typeof address === 'string' ? address : address.display_name || JSON.stringify(address)}</p>
               <button onClick={handleChangeAddress}>Change Address</button>
             </div>
           )}
@@ -216,7 +204,7 @@ export default function Cart() {
                 <h2>Order Confirmation</h2>
                 <p>Your total bill is <strong>₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></p>
                 {address && (
-                  <p>Shipping to: <strong>{address.display_name}</strong></p>
+                  <p>Shipping to: <strong>{typeof address === 'string' ? address : address.display_name || JSON.stringify(address)}</strong></p>
                 )}
                 <p>Thank you for shopping sustainably with Eco Cart!</p>
                 <button onClick={handleConfirm} className="buy-now-btn">Confirm Order</button>
@@ -225,7 +213,6 @@ export default function Cart() {
             </div>
           )}
         </div>
-
         <style jsx>{`
           .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
           .user-info, .address-info { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
