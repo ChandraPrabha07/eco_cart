@@ -13,8 +13,34 @@ export default function Cart() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [address, setAddress] = useState(null);
   const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Clear all user-related state and redirect to login
+        setUser(null);
+        setShippingAddress('');
+        clearCart();
+        router.replace('/login');
+      } else {
+        setUser(session.user);
+        // Fetch shipping address
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('shipping_address')
+          .eq('id', session.user.id)
+          .single();
+        setShippingAddress(profile?.shipping_address || '');
+      }
+      setLoading(false);
+    };
+    checkSession();
+  }, [router, clearCart]);
 
-  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  if (loading) return <div>Loading...</div>;
+  
+   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   useEffect(() => {
     const fetchUserAndAddress = async () => {
