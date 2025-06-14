@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router';
 import Notification from '../components/Notification'
 import { useCart } from '../context/CartContext';
+import { supabase } from '../utils/supabaseClient';
 
 const products=[
       { id: 1, name: "Bamboo Toothbrush Set", price: 299, stock: 25, image: "https://images.unsplash.com/photo-1646376156066-174d86571e5b?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8YmFtYm9vJTIwdG9vdGhicnVzaHxlbnwwfHwwfHx8MA%3D%3D", category: "Personal Care" },
@@ -46,7 +47,7 @@ export default function Home() {
   useEffect(() => {
     fetchProducts();
   }, []);
-  
+
   const handleAddToCart = (product) => {
     addToCart(product);
     setNotification(`${product.name} added to cart!`);
