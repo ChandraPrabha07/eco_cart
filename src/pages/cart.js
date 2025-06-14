@@ -154,6 +154,12 @@ export default function Cart() {
               <div className="cart-items">
                 {cart.map(item => (
                   <div key={item.id} className="cart-item">
+                    <img
+                    src={item.image}
+                    alt={item.name}
+                    className="cart-item-image"
+                    style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, marginRight: 16 }}
+                    />
                     <span>{item.name}</span>
                     <span>₹{item.price.toLocaleString('en-IN')}</span>
                     <div className="quantity-controls">
