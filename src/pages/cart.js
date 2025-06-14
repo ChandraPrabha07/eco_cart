@@ -77,6 +77,29 @@ export default function Cart() {
           setNotification("Failed to save order. Please check permissions or required fields.");
           return;
         }
+        for (const item of cart) {
+          // Fetch the latest stock from the DB (optional, for accuracy)
+          const { data: productData, error: fetchError } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.id)
+            .single();
+
+          if (fetchError) {
+            console.error(`Failed to fetch stock for product ${item.id}:`, fetchError.message);
+            continue;
+          }
+
+          const newStock = (productData?.stock || 0) - item.quantity;
+          const { error: stockError } = await supabase
+            .from('products')
+            .update({ stock: newStock })
+            .eq('id', item.id);
+
+          if (stockError) {
+            console.error(`Failed to update stock for product ${item.id}:`, stockError.message);
+          }
+        }
 
         clearCart();
         setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
