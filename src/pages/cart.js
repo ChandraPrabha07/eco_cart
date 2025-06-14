@@ -12,7 +12,8 @@ export default function Cart() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [address, setAddress] = useState(null);
   const [user, setUser] = useState(null);
-  
+  const [shippingAddress, setShippingAddress] = useState('');
+
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
