@@ -37,7 +37,6 @@ export default function Cart() {
     checkSession();
   }, [router, clearCart]);
 
-  if (loading) return <div>Loading...</div>;
   
    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
