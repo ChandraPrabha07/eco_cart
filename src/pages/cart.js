@@ -15,7 +15,34 @@ export default function Cart() {
   const router = useRouter();
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  useEffect(() => {
+    const fetchUserAndAddress = async () => {
+      if (typeof window !== 'undefined') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
 
+          // Fetch default address from Supabase profiles table
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('default_address')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile && profile.default_address) {
+            setAddress(profile.default_address);
+          } else {
+            setAddress(null);
+          }
+        } else {
+          setUser(null);
+          setAddress(null);
+        }
+      }
+    };
+    fetchUserAndAddress();
+  }, []);
+  
   // ✅ Correct useEffect – No nesting
   useEffect(() => {
     const fetchUser = async () => {
