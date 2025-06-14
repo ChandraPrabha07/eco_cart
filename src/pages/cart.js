@@ -13,6 +13,7 @@ export default function Cart() {
   const [address, setAddress] = useState(null);
   const [user, setUser] = useState(null);
   const [shippingAddress, setShippingAddress] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -38,7 +39,7 @@ export default function Cart() {
     checkSession();
   }, [router, clearCart]);
 
-  
+  if (loading) return <div>Loading...</div>;
    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   useEffect(() => {
