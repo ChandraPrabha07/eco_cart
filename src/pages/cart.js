@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext';
 import { supabase } from '../utils/supabaseClient';
 
 export default function Cart() {
-  const { cart, updateQuantity, clearCart } = useCart();
+  const { cart, updateQuantity, clearCart, removeFromCart } = useCart();
   const [notification, setNotification] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [address, setAddress] = useState(null);
@@ -25,20 +25,13 @@ export default function Cart() {
           setUser(session.user);
 
           // Fetch default address from profiles table
-          const { data: profile, error } = await supabase
+          const { data: profile } = await supabase
             .from('profiles')
             .select('default_address')
             .eq('id', session.user.id)
             .single();
 
-          if (error) {
-            console.error('Error fetching profile:', error.message);
-            setAddress(null);
-          } else if (profile && profile.default_address) {
-            setAddress(profile.default_address);
-          } else {
-            setAddress(null);
-          }
+          setAddress(profile?.default_address || null);
         } else {
           setUser(null);
           setAddress(null);
@@ -54,6 +47,64 @@ export default function Cart() {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  // Update stock in Supabase when quantity changes
+  const handleUpdateQuantity = async (id, newQuantity) => {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    if (newQuantity < 1) return;
+
+    // Fetch current stock
+    const { data: productData } = await supabase
+      .from('products')
+      .select('stock')
+      .eq('id', id)
+      .single();
+
+    if (!productData) {
+      setNotification("Product not found.");
+      return;
+    }
+
+    const diff = newQuantity - item.quantity;
+    const newStock = productData.stock - diff;
+
+    if (newStock < 0) {
+      setNotification("Not enough stock.");
+      return;
+    }
+
+    // Update stock in DB
+    await supabase
+      .from('products')
+      .update({ stock: newStock })
+      .eq('id', id);
+
+    updateQuantity(id, newQuantity);
+  };
+
+  // Remove from cart and increase stock
+  const handleRemoveFromCart = async (id) => {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+
+    // Fetch current stock
+    const { data: productData } = await supabase
+      .from('products')
+      .select('stock')
+      .eq('id', id)
+      .single();
+
+    if (productData) {
+      const newStock = productData.stock + item.quantity;
+      await supabase
+        .from('products')
+        .update({ stock: newStock })
+        .eq('id', id);
+    }
+
+    removeFromCart(id);
+  };
 
   const handleBuyNow = () => {
     if (cart.length === 0) {
@@ -79,57 +130,21 @@ export default function Cart() {
             user_id: user.id,
             items: cart,
             status: 'confirmed',
-            shipping_address: typeof address === 'string'
-              ? address
-              : address?.display_name || JSON.stringify(address) || 'No address provided',
+            shipping_address: address || 'No address provided',
             total_amount: total,
             created_at: new Date().toISOString()
           }
         ]);
         if (orderError) {
-          console.error('Order save error:', orderError);
           setNotification("Failed to save order. Please check permissions or required fields.");
           return;
         }
-
-        // 2. Update stock for each product in the cart
-        for (const item of cart) {
-          // Fetch the latest stock from the DB (for accuracy)
-          const { data: productData, error: fetchError } = await supabase
-            .from('products')
-            .select('stock')
-            .eq('id', item.id)
-            .single();
-
-          if (fetchError) {
-            console.error(`Failed to fetch stock for product ${item.id}:`, fetchError.message);
-            continue;
-          }
-
-          const newStock = (productData?.stock || 0) - item.quantity;
-          const { error: stockError } = await supabase
-            .from('products')
-            .update({ stock: newStock })
-            .eq('id', item.id);
-
-          if (stockError) {
-            console.error(`Failed to update stock for product ${item.id}:`, stockError.message);
-          }
-        }
-
         clearCart();
         setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
         setShowConfirmation(false);
-
-        // 3. Refresh the home/product page to display updated stock
-        if (typeof window !== 'undefined') {
-          setTimeout(() => {
-            window.location.href = '/'; // Redirects to home, which will fetch fresh products
-          }, 1000);
-        }
+        setTimeout(() => router.push('/'), 1500);
       }
     } catch (error) {
-      console.error('Order confirm exception:', error);
       setNotification("Error confirming order. Please try again.");
     }
   };
@@ -145,7 +160,7 @@ export default function Cart() {
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
 
-      <div className="container">
+      <div className="container cart-bg">
         <div className="cart-page">
           <h1>Your Shopping Cart</h1>
           {user && (
@@ -156,11 +171,7 @@ export default function Cart() {
           {address && (
             <div className="address-info">
               <h3>📍 Shipping Address</h3>
-              <p>
-                {typeof address === 'string'
-                  ? address
-                  : address.display_name || JSON.stringify(address)}
-              </p>
+              <p>{address}</p>
               <button onClick={handleChangeAddress}>Change Address</button>
             </div>
           )}
@@ -174,26 +185,32 @@ export default function Cart() {
               <div className="cart-items">
                 {cart.map(item => (
                   <div key={item.id} className="cart-item">
-                    <img src={item.image} alt={item.name} className="cart-item-image" />
+                    <div className="cart-image-category">
+                      <img src={item.image} alt={item.name} className="cart-item-image" />
+                      <span className="category-overlay">{item.category}</span>
+                    </div>
                     <div className="cart-item-details">
                       <h3>{item.name}</h3>
                       <p className="cart-item-price">₹{item.price.toLocaleString('en-IN')}</p>
                     </div>
                     <div className="quantity-controls">
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                         aria-label="Decrease quantity"
                         disabled={item.quantity <= 1}
                       >-</button>
                       <span className="quantity">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                         aria-label="Increase quantity"
                       >+</button>
                     </div>
                     <div className="cart-item-total">
                       ₹{(item.price * item.quantity).toLocaleString('en-IN')}
                     </div>
+                    <button className="remove-btn" onClick={() => handleRemoveFromCart(item.id)}>
+                      Remove
+                    </button>
                   </div>
                 ))}
               </div>
@@ -216,11 +233,7 @@ export default function Cart() {
                 <h2>Order Confirmation</h2>
                 <p>Your total bill is <strong>₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></p>
                 {address && (
-                  <p>Shipping to: <strong>
-                    {typeof address === 'string'
-                      ? address
-                      : address.display_name || JSON.stringify(address)}
-                  </strong></p>
+                  <p>Shipping to: <strong>{address}</strong></p>
                 )}
                 <p>Thank you for shopping sustainably with Eco Cart!</p>
                 <button onClick={handleConfirm} className="buy-now-btn">Confirm Order</button>
@@ -230,12 +243,14 @@ export default function Cart() {
           )}
         </div>
         <style jsx>{`
-          .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+          .cart-bg { background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); min-height: 100vh; }
           .user-info, .address-info { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
           .user-info p { margin: 0; color: #28a745; font-weight: 500; }
           .cart-items { margin-bottom: 2rem; }
-          .cart-item { display: flex; align-items: center; margin-bottom: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 1rem; }
+          .cart-item { display: flex; align-items: center; margin-bottom: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 1rem; position: relative; }
+          .cart-image-category { position: relative; }
           .cart-item-image { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 1rem; }
+          .category-overlay { position: absolute; top: 8px; left: 8px; background: #28a745cc; color: #fff; font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; }
           .cart-item-details { flex: 2; }
           .cart-item-price { color: #28a745; font-weight: bold; }
           .quantity-controls { display: flex; align-items: center; gap: 0.5rem; }
@@ -243,6 +258,7 @@ export default function Cart() {
           .quantity-controls button:disabled { background: #ccc; cursor: not-allowed; }
           .quantity { min-width: 2rem; text-align: center; }
           .cart-item-total { font-weight: bold; margin-left: 1rem; }
+          .remove-btn { background: #dc3545; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-left: 1rem; }
           .cart-summary { background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: right; }
           .buy-now-btn { background: #28a745; color: white; border: none; padding: 0.75rem 2rem; border-radius: 4px; cursor: pointer; margin-right: 1rem; }
           .continue-shopping { margin-left: 1rem; color: #007bff; text-decoration: underline; }

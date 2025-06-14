@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
-import Link from 'next/link'
 import { useRouter } from 'next/router';
 import Notification from '../components/Notification'
 import { useCart } from '../context/CartContext';
@@ -33,6 +32,7 @@ export default function Home() {
   const router = useRouter();
   const { addToCart } = useCart();
   const [notification, setNotification] = useState('');
+  const [productList, setProductList] = useState(products);
 
   // Add to cart handler
   const handleAddToCart = (product) => {
@@ -40,8 +40,14 @@ export default function Home() {
       setNotification('This product is out of stock.');
       return;
     }
-    addToCart(product);
+    addToCart({ ...product, quantity: 1 });
     setNotification(`${product.name} added to cart!`);
+    // Optionally, decrease stock in local UI
+    setProductList(prev =>
+      prev.map(p =>
+        p.id === product.id ? { ...p, stock: p.stock - 1 } : p
+      )
+    );
   };
 
   useEffect(() => {
@@ -58,19 +64,22 @@ export default function Home() {
       </Head>
       <Notification message={notification} onClose={() => setNotification('')} />
 
-      <div className="container">
+      <div className="container home-bg">
         <div className="hero">
           <h1>🌱 Welcome to Eco Cart</h1>
           <p>Discover sustainable products for a greener tomorrow</p>
         </div>
 
         <div className="products-grid">
-          {products.length === 0 ? (
+          {productList.length === 0 ? (
             <p>No products available.</p>
           ) : (
-            products.map(product => (
+            productList.map(product => (
               <div key={product.id} className="product-card">
-                <img src={product.image} alt={product.name} />
+                <div className="product-image-category">
+                  <img src={product.image} alt={product.name} />
+                  <span className="category-overlay">{product.category}</span>
+                </div>
                 <div className="product-info">
                   <h3>{product.name}</h3>
                   <p className="description">{product.description || product.category}</p>
@@ -97,6 +106,7 @@ export default function Home() {
           )}
         </div>
         <style jsx>{`
+          .home-bg { background: linear-gradient(135deg, #f5d6e6 0%, #a8edea 100%); min-height: 100vh; }
           .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
           .hero { text-align: center; margin-bottom: 3rem; }
           .products-grid {
@@ -109,12 +119,15 @@ export default function Home() {
             border-radius: 8px;
             overflow: hidden;
             transition: transform 0.2s, box-shadow 0.2s;
+            background: #fff;
           }
           .product-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
           }
+          .product-image-category { position: relative; }
           .product-card img { width: 100%; height: 200px; object-fit: cover; }
+          .category-overlay { position: absolute; top: 8px; left: 8px; background: #28a745cc; color: #fff; font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; }
           .product-info { padding: 1.5rem; }
           .product-info h3 { margin-bottom: 0.5rem; color: #333; }
           .description { color: #6c757d; margin-bottom: 1rem; font-size: 0.9rem; }

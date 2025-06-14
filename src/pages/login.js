@@ -1,49 +1,105 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../utils/supabaseClient';
-import { useRouter } from 'next/router';
+import { useState } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { supabase } from '../utils/supabaseClient';
+import Notification from '../components/Notification';
 
 export default function Login() {
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [notification, setNotification] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
+
+  // Address search state
+  const [address, setAddress] = useState('');
+  const [coordinates, setCoordinates] = useState({ lat: '', lon: '' });
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+
   const router = useRouter();
 
-  // Check if already logged in
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem('sb-user');
-      if (stored) {
-        router.push('/'); // Redirect to home if already logged in
-      }
-    }
-  }, [router]);
+  // OpenStreetMap address search logic
+  const searchAddress = async (q) => {
+    if (!q) return setResults([]);
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`
+    );
+    const data = await res.json();
+    setResults(data);
+  };
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleAddressChange = (e) => {
+    setQuery(e.target.value);
+    searchAddress(e.target.value);
+  };
 
-  const handleSubmit = async e => {
+  const handleAddressSelect = (place) => {
+    setAddress(place.display_name);
+    setCoordinates({ lat: place.lat, lon: place.lon });
+    setQuery(place.display_name);
+    setResults([]);
+  };
+
+  // Login logic
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: form.email,
-        password: form.password,
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (error) {
-        setError(error.message);
-      } else {
-        localStorage.setItem('sb-user', JSON.stringify(data.user));
-        // Redirect to shopping list (home page) after successful login
-        router.push('/');
-      }
-    } catch (err) {
-      setError('Login failed. Please try again.');
-    } finally {
+    if (error) {
+      setNotification(error.message);
       setLoading(false);
+      return;
     }
+
+    // Check if user has address in profile
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('default_address')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile || !profile.default_address) {
+        setShowAddress(true);
+        setNotification('Please enter your address.');
+      } else {
+        router.push('/'); // or '/cart' if you prefer
+      }
+    }
+    setLoading(false);
+  };
+
+  // Save address to Supabase
+  const handleSaveAddress = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: user.id,
+        default_address: address,
+        latitude: coordinates.lat,
+        longitude: coordinates.lon,
+      });
+      if (profileError) {
+        setNotification('Failed to save address.');
+        setLoading(false);
+        return;
+      }
+      setNotification('Address saved! Redirecting...');
+      setTimeout(() => {
+        router.push('/');
+      }, 1000);
+    } else {
+      setNotification('Please log in to save your address.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -51,96 +107,67 @@ export default function Login() {
       <Head>
         <title>Login - Eco Cart</title>
       </Head>
-      <div className="auth-container">
-        <div className="auth-form">
-          <h2>Login to Eco Cart</h2>
-          <form onSubmit={handleSubmit}>
+      <Notification message={notification} onClose={() => setNotification('')} />
+
+      <div style={{ maxWidth: 400, margin: '2rem auto', padding: 24, background: '#f6f7f9', borderRadius: 8 }}>
+        <h1>Login</h1>
+        {!showAddress ? (
+          <form onSubmit={handleLogin}>
+            <label>Email:</label>
             <input
-              name="email"
               type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
               required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={{ width: '100%', padding: '8px', marginBottom: 16 }}
             />
+
+            <label>Password:</label>
             <input
-              name="password"
               type="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
               required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              style={{ width: '100%', padding: '8px', marginBottom: 16 }}
             />
-            <button type="submit" disabled={loading}>
+
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: 4 }}>
               {loading ? 'Logging in...' : 'Login'}
             </button>
-            {error && <p className="error">{error}</p>}
           </form>
-          <p>
-            Don't have an account? <a href="/signup">Sign up here</a>
-          </p>
-        </div>
-
-        <style jsx>{`
-          .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 80vh;
-            padding: 2rem;
-          }
-          .auth-form {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-          }
-          .auth-form h2 {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: #333;
-          }
-          .auth-form input {
-            width: 100%;
-            padding: 0.75rem;
-            margin-bottom: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-          }
-          .auth-form button {
-            width: 100%;
-            padding: 0.75rem;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-          }
-          .auth-form button:hover {
-            background: #218838;
-          }
-          .auth-form button:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-          }
-          .error {
-            color:rgb(12, 12, 12);
-            text-align: center;
-            margin-top: 1rem;
-          }
-          .auth-form p {
-            text-align: center;
-            margin-top: 1rem;
-          }
-          .auth-form a {
-            color: #007bff;
-            text-decoration: none;
-          }
-        `}</style>
+        ) : (
+          <>
+            <label>Address (powered by OpenStreetMap):</label>
+            <div style={{ position: 'relative', marginBottom: 16 }}>
+              <input
+                type="text"
+                placeholder="Enter your address"
+                value={query}
+                onChange={handleAddressChange}
+                style={{ width: '100%', padding: '8px' }}
+              />
+              <ul style={{ listStyle: 'none', padding: 0, maxHeight: 150, overflowY: 'auto', background: '#fff', border: '1px solid #eee', position: 'absolute', zIndex: 10, width: '100%' }}>
+                {results.map((r) => (
+                  <li
+                    key={r.place_id}
+                    style={{ cursor: 'pointer', padding: '4px' }}
+                    onClick={() => handleAddressSelect(r)}
+                  >
+                    {r.display_name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {address && (
+              <div style={{ marginBottom: 16, color: 'green', fontSize: '0.95rem' }}>
+                Selected: {address}
+              </div>
+            )}
+            <button onClick={handleSaveAddress} disabled={loading || !address} style={{ width: '100%', padding: '10px', background: '#28a745', color: '#fff', border: 'none', borderRadius: 4 }}>
+              {loading ? 'Saving...' : 'Save Address & Continue'}
+            </button>
+          </>
+        )}
       </div>
     </>
   );
