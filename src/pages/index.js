@@ -3,12 +3,13 @@ import Head from 'next/head'
 import { useRouter } from 'next/router';
 import Notification from '../components/Notification'
 import { useCart } from '../context/CartContext';
+import Navbar from '../components/Navbar';
 
 // Your hardcoded products array
 const products = [
   { id: 1, name: "Bamboo Toothbrush Set", price: 299, stock: 25, image: "https://images.unsplash.com/photo-1646376156066-174d86571e5b?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8YmFtYm9vJTIwdG9vdGhicnVzaHxlbnwwfHwwfHx8MA%3D%3D", category: "Personal Care" },
   { id: 2, name: "Reusable Water Bottle", price: 499, stock: 18, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=300", category: "Lifestyle" },
-  { id: 3, name: "Organic Cotton Tote Bag", price: 199, stock: 30, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300", category: "Bags" },
+  { id: 3, name: "Organic Cotton Tote Bag", price: 199, stock: 30, image: "https://media.istockphoto.com/id/1148884819/photo/woman-is-holding-bag-canvas-fabric-for-mockup-blank-template.webp?a=1&b=1&s=612x612&w=0&k=20&c=itYXJ2xKoXFW_5YEPRcCyeRntVxlu3e7I2JhMGUazbI=", category: "Bags" },
   { id: 4, name: "Solar Power Bank", price: 1799, stock: 12, image: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=300", category: "Electronics" },
   { id: 5, name: "Beeswax Food Wraps", price: 399, stock: 22, image: "https://images.unsplash.com/photo-1669490883681-2378be12bb29?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Zm9vZCUyMHdhcnAlMjBjb3ZlcnxlbnwwfHwwfHx8MA%3D%3D", category: "Kitchen" },
   { id: 6, name: "Stainless Steel Straws", price: 149, stock: 35, image: "https://images.unsplash.com/photo-1554327075-31266866daa7?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3RlZWwlMjBzdHJhd3xlbnwwfHwwfHx8MA%3D%3D", category: "Kitchen" },
@@ -57,11 +58,12 @@ export default function Home() {
     }
   }, [notification]);
 
-  return (
+   return (
     <>
       <Head>
         <title>Eco Cart - Sustainable Shopping</title>
       </Head>
+      <Navbar /> {/* <-- Add this to show Logout button and navigation */}
       <Notification message={notification} onClose={() => setNotification('')} />
 
       <div className="container home-bg">
@@ -104,7 +106,7 @@ export default function Home() {
               </div>
             ))
           )}
-        </div>
+       </div>
         <style jsx>{`
           .home-bg { background: linear-gradient(135deg, #f5d6e6 0%, #a8edea 100%); min-height: 100vh; }
           .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }

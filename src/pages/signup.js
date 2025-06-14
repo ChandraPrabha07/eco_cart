@@ -61,16 +61,16 @@ export default function Signup() {
     }
 
     // 2. Insert profile info into profiles table
-    const user = data.user;
+    const user = data.user || data.session?.user;
     if (user) {
-      const { error: profileError } = await supabase.from('profiles').upsert({
+      const { error: profileError } = await supabase.from('profiles').upsert([{
         id: user.id,
         name,
         country,
         phone,
         email,
         shipping_address: shippingAddress,
-      });
+      }]);
       if (profileError) {
         setNotification('Signup succeeded, but failed to save profile.');
         setLoading(false);
@@ -86,92 +86,92 @@ export default function Signup() {
   };
 
   return (
-    <>
-      <Head>
-        <title>Sign Up - Eco Cart</title>
-      </Head>
-      <Notification message={notification} onClose={() => setNotification('')} />
-      <div style={{ maxWidth: 400, margin: '2rem auto', padding: 24, background: '#f6f7f9', borderRadius: 8 }}>
-        <h1>Sign Up</h1>
-        <form onSubmit={handleSignup}>
-          <label>Name:</label>
+  <>
+    <Head>
+      <title>Sign Up - Eco Cart</title>
+    </Head>
+    <Notification message={notification} onClose={() => setNotification('')} />
+    <div style={{ maxWidth: 400, margin: '2rem auto', padding: 24, background: '#f6f7f9', borderRadius: 8 }}>
+      <h1>Sign Up</h1>
+      <form onSubmit={handleSignup}>
+        <label>Name:</label>
+        <input
+          type="text"
+          required
+          value={name}
+          onChange={e => setName(e.target.value)}
+          style={{ width: '100%', padding: '8px', marginBottom: 12 }}
+        />
+
+        <label>Country:</label>
+        <input
+          type="text"
+          required
+          value={country}
+          onChange={e => setCountry(e.target.value)}
+          style={{ width: '100%', padding: '8px', marginBottom: 12 }}
+        />
+
+        <label>Phone Number:</label>
+        <input
+          type="tel"
+          required
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          style={{ width: '100%', padding: '8px', marginBottom: 12 }}
+        />
+
+        <label>Email:</label>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          style={{ width: '100%', padding: '8px', marginBottom: 12 }}
+        />
+
+        <label>Password:</label>
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          style={{ width: '100%', padding: '8px', marginBottom: 12 }}
+        />
+
+        <label>Shipping Address (powered by OpenStreetMap):</label>
+        <div style={{ position: 'relative', marginBottom: 16 }}>
           <input
             type="text"
             required
-            value={name}
-            onChange={e => setName(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: 12 }}
+            value={addressQuery}
+            onChange={handleAddressInput}
+            placeholder="Enter your address"
+            style={{ width: '100%', padding: '8px' }}
           />
-
-          <label>Country:</label>
-          <input
-            type="text"
-            required
-            value={country}
-            onChange={e => setCountry(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: 12 }}
-          />
-
-          <label>Phone Number:</label>
-          <input
-            type="tel"
-            required
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: 12 }}
-          />
-
-          <label>Email:</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: 12 }}
-          />
-
-          <label>Password:</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: 12 }}
-          />
-
-          <label>Shipping Address (powered by OpenStreetMap):</label>
-          <div style={{ position: 'relative', marginBottom: 16 }}>
-            <input
-              type="text"
-              required
-              value={addressQuery}
-              onChange={handleAddressInput}
-              placeholder="Enter your address"
-              style={{ width: '100%', padding: '8px' }}
-            />
-            <ul style={{ listStyle: 'none', padding: 0, maxHeight: 150, overflowY: 'auto', background: '#fff', border: '1px solid #eee', position: 'absolute', zIndex: 10, width: '100%' }}>
-              {addressResults.map((r) => (
-                <li
-                  key={r.place_id}
-                  style={{ cursor: 'pointer', padding: '4px' }}
-                  onClick={() => handleAddressSelect(r)}
-                >
-                  {r.display_name}
-                </li>
-              ))}
-            </ul>
+          <ul style={{ listStyle: 'none', padding: 0, maxHeight: 150, overflowY: 'auto', background: '#fff', border: '1px solid #eee', position: 'absolute', zIndex: 10, width: '100%' }}>
+            {addressResults.map((r) => (
+              <li
+                key={r.place_id}
+                style={{ cursor: 'pointer', padding: '4px' }}
+                onClick={() => handleAddressSelect(r)}
+              >
+                {r.display_name}
+              </li>
+            ))}
+          </ul>
+        </div>
+        {shippingAddress && (
+          <div style={{ marginBottom: 16, color: 'green', fontSize: '0.95rem' }}>
+            Selected: {shippingAddress}
           </div>
-          {shippingAddress && (
-            <div style={{ marginBottom: 16, color: 'green', fontSize: '0.95rem' }}>
-              Selected: {shippingAddress}
-            </div>
-          )}
+        )}
 
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', background: '#28a745', color: '#fff', border: 'none', borderRadius: 4 }}>
-            {loading ? 'Signing up...' : 'Sign Up'}
-          </button>
-        </form>
-      </div>
-    </>
-  );
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', background: '#28a745', color: '#fff', border: 'none', borderRadius: 4 }}>
+          {loading ? 'Signing up...' : 'Sign Up'}
+        </button>
+      </form>
+    </div>
+  </>
+);
 }

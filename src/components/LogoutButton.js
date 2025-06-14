@@ -17,15 +17,19 @@ export default function LogoutButton() {
   };
 
   return (
-    <button onClick={handleLogout} style={{
-      background: '#dc3545',
-      color: 'white',
-      border: 'none',
-      borderRadius: 6,
-      padding: '0.5rem 1.2rem',
-      cursor: 'pointer'
-    }}>
+    <button
+      onClick={handleLogout}
+      style={{
+        background: '#dc3545',
+        color: 'white',
+        border: 'none',
+        borderRadius: 6,
+        padding: '0.5rem 1.2rem',
+        cursor: 'pointer'
+      }}
+    >
       Log Out
     </button>
   );
 }
+
