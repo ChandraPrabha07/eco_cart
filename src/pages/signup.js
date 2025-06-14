@@ -69,9 +69,8 @@ export default function Signup() {
     if (user) {
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: user.id,
-        default_address: address,
-        latitude: coordinates.lat,
-        longitude: coordinates.lon,
+        shipping_address: address,
+        
       });
       if (profileError) {
         setNotification('Failed to save address.');
