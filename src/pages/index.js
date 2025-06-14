@@ -32,7 +32,21 @@ export default function Home() {
   const router = useRouter();
   const { addToCart } = useCart();
   const [notification, setNotification] = useState('');
+  const [products, setProducts] = useState([]);
 
+  const fetchProducts = async () => {
+    const { data, error } = await supabase.from('products').select('*');
+    if (error) {
+      console.error('Error fetching products:', error.message);
+    } else {
+      setProducts(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+  
   const handleAddToCart = (product) => {
     addToCart(product);
     setNotification(`${product.name} added to cart!`);

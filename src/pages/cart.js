@@ -20,7 +20,6 @@ export default function Cart() {
   useEffect(() => {
     const fetchUserAndAddress = async () => {
       if (typeof window !== 'undefined') {
-        // Get current session/user
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
@@ -80,7 +79,9 @@ export default function Cart() {
             user_id: user.id,
             items: cart,
             status: 'confirmed',
-            shipping_address: address || 'No address provided',
+            shipping_address: typeof address === 'string'
+              ? address
+              : address?.display_name || JSON.stringify(address) || 'No address provided',
             total_amount: total,
             created_at: new Date().toISOString()
           }
@@ -119,6 +120,13 @@ export default function Cart() {
         clearCart();
         setNotification("Order confirmed! Thank you for your eco-friendly purchase.");
         setShowConfirmation(false);
+
+        // 3. Refresh the home/product page to display updated stock
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            window.location.href = '/'; // Redirects to home, which will fetch fresh products
+          }, 1000);
+        }
       }
     } catch (error) {
       console.error('Order confirm exception:', error);
@@ -148,7 +156,11 @@ export default function Cart() {
           {address && (
             <div className="address-info">
               <h3>📍 Shipping Address</h3>
-              <p>{typeof address === 'string' ? address : address.display_name || JSON.stringify(address)}</p>
+              <p>
+                {typeof address === 'string'
+                  ? address
+                  : address.display_name || JSON.stringify(address)}
+              </p>
               <button onClick={handleChangeAddress}>Change Address</button>
             </div>
           )}
@@ -204,7 +216,11 @@ export default function Cart() {
                 <h2>Order Confirmation</h2>
                 <p>Your total bill is <strong>₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></p>
                 {address && (
-                  <p>Shipping to: <strong>{typeof address === 'string' ? address : address.display_name || JSON.stringify(address)}</strong></p>
+                  <p>Shipping to: <strong>
+                    {typeof address === 'string'
+                      ? address
+                      : address.display_name || JSON.stringify(address)}
+                  </strong></p>
                 )}
                 <p>Thank you for shopping sustainably with Eco Cart!</p>
                 <button onClick={handleConfirm} className="buy-now-btn">Confirm Order</button>
