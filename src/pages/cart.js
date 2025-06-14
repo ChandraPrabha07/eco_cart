@@ -8,7 +8,6 @@ import { supabase } from '../utils/supabaseClient';
 export default function Cart() {
   const router = useRouter();
   const { cart, updateQuantity, clearCart, removeFromCart } = useCart();
-
   const [notification, setNotification] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [address, setAddress] = useState(null);
